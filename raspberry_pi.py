@@ -15,16 +15,17 @@ class Raspberry_Pi(object):
 	def __init__(self,IP_ADDRESS,master):
 		self.IP_ADDRESS = IP_ADDRESS
 		ListOfProtocols = ["Paired pulse", "Flashing Lights", "Blocks"]
-		self.window = Command_Window(tk.Toplevel(master),ListOfProtocols)
-		self.window.set_title("Raspberry Pi at: "+self.IP_ADDRESS)
-		
-		self.window.protocol_button(self)
-		self.window.quit_button(lambda: self.close_pi())
 		if use_ssh:
 			ssh = paramiko.SSHClient()
 			ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 			ssh.connect(IP_ADDRESS,username='pi',password='raspberry')
 			self.ssh = ssh
+			self.window = Command_Window(tk.Toplevel(master),ListOfProtocols)
+			self.window.set_title("Raspberry Pi at: "+self.IP_ADDRESS)
+		
+			self.window.protocol_button(self)
+			self.window.quit_button(lambda: self.close_pi())
+			
 
 	def run_prot(self,protocol_listed):
 		# runs the protocol listed by sending a command to the Pi, which commands the Arduino

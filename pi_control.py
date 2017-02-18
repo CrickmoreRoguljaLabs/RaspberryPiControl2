@@ -13,8 +13,16 @@ from raspberry_pi import Raspberry_Pi
 
 def pi_connect(address):
 	## Connect to a raspberry pi at location address.
-	this_pi = Raspberry_Pi(address,master)
-	ListOfPis.append(this_pi)
+	try:
+		this_pi = Raspberry_Pi(address,master)
+		ListOfPis.append(this_pi)
+	except:
+		connection_error()
+
+def connection_error():
+	error_window = tk.Toplevel(master)
+	tk.Label(error_window,text="Error connecting to raspberry pis.\nMake sure you're on TCH network").pack()
+	tk.Button(error_window,text="OK",command=error_window.destroy).pack()
 
 def close_down():
 	for pi in ListOfPis:
