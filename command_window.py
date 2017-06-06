@@ -148,16 +148,16 @@ class Command_Window(object):
 				self.command_entries[-1].pack(anchor=tk.NW)
 
 		if protocol_listed == "Flashing Lights":
+			self.command_labels.append(tk.Label(commandFrame,text='Well Number'))
+			self.command_labels[-1].pack(anchor=tk.NW)
+			self.command_entries.append(tk.Entry(commandFrame))
+			self.command_entries[-1].pack(anchor=tk.NW)
 			colorFrame = tk.Frame(commandFrame)
 			colorFrame.pack(side=tk.TOP)
 			for color in self.colors:
 				frame = tk.Frame(colorFrame)
 				frame.pack(side=tk.RIGHT)
 				tk.Label(frame,text=color).pack(side=tk.TOP)
-				self.command_labels.append(tk.Label(frame,text='Well Number'))
-				self.command_labels[-1].pack(anchor=tk.NW)
-				self.command_entries.append(tk.Entry(frame))
-				self.command_entries[-1].pack(anchor=tk.NW)
 
 				self.command_labels.append(tk.Label(commandFrame,text='Frequency (Hz)'))
 				self.command_labels[-1].pack(anchor=tk.NW)

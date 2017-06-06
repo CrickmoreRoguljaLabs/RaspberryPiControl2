@@ -1163,7 +1163,7 @@
  [],
  False,
  False,
- 1496771019,
+ 1496772554,
  [('run',
    '/Users/stephen/anaconda/lib/python2.7/site-packages/PyInstaller/bootloader/Darwin-64bit/run',
    'EXECUTABLE')])
