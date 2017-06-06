@@ -6,7 +6,7 @@ else:
 	import tkinter as tk
 import time
 import stopwatch
-from receive_image import VideoStream
+#from receive_image import VideoStream
 import threading
 
 class Command_Window(object):
@@ -17,15 +17,15 @@ class Command_Window(object):
 		self.commandFrame = tk.Frame(self.window)
 		self.historyFrame = tk.Frame(self.commandFrame)
 		self.timerFrame = tk.Frame(self.commandFrame)
-		self.videoFrame = tk.Frame(self.window)
-		self.videoFrame.pack(side=tk.RIGHT)
+		#self.videoFrame = tk.Frame(self.window)
+		#self.videoFrame.pack(side=tk.RIGHT)
 		self.button_dict = {}
 		self.command_entries = []
 		self.command_labels = []
 		self.command_history = []
-		self.stream = None
-		self.panel = None
-		self.stop_vid = threading.Event()
+		#self.stream = None
+		#self.panel = None
+		#self.stop_vid = threading.Event()
 		self.colors = colors
 
 	def set_title(self, title):
@@ -35,26 +35,26 @@ class Command_Window(object):
 		# for testing when ssh is off
 		pass 
 
-	def play_video(self,vid_shell,port=8000):
-		stream=VideoStream(port=port,vid_shell=vid_shell)
-		time.sleep(1)
-		threading.Thread(target=stream.play_video).start()
-		print self.stop_vid.is_set()
-		while not self.stop_vid.is_set():
-			frame = stream.read()
-			print frame
-			if self.panel is None:
-				self.panel = tk.Label(self.videoFrame,image=frame)
-				self.panel.image = frame
-				self.panel.pack(side=tk.TOP, padx=10, pady=10)
-		
-				# otherwise, simply update the panel
-			else:
-				self.panel.configure(image=frame)
-				self.panel.image = frame
+#	def play_video(self,vid_shell,port=8000):
+#		stream=VideoStream(port=port,vid_shell=vid_shell)
+#		time.sleep(1)
+#		threading.Thread(target=stream.play_video).start()
+#		print self.stop_vid.is_set()
+#		while not self.stop_vid.is_set():
+#			frame = stream.read()
+#			print frame
+#			if self.panel is None:
+#				self.panel = tk.Label(self.videoFrame,image=frame)
+#				self.panel.image = frame
+#				self.panel.pack(side=tk.TOP, padx=10, pady=10)
+#		
+#				# otherwise, simply update the panel
+#			else:
+#				self.panel.configure(image=frame)
+#				self.panel.image = frame
 
-	def stop_video(self):
-		self.stop_vid.set()
+#	def stop_video(self):
+#		self.stop_vid.set()
 
 	def protocol_button(self,this_pi):
 		protFrame = self.protFrame
@@ -122,7 +122,6 @@ class Command_Window(object):
 			# if there are multiple colors, make multiple color command frames
 			colorFrame = tk.Frame(commandFrame)
 			colorFrame.pack(side=tk.TOP)
-			color_frame_dict = {}
 			for color in self.colors:
 				frame = tk.Frame(colorFrame)
 				frame.pack(side=tk.RIGHT)
@@ -149,22 +148,30 @@ class Command_Window(object):
 				self.command_entries[-1].pack(anchor=tk.NW)
 
 		if protocol_listed == "Flashing Lights":
-			self.command_labels.append(tk.Label(commandFrame,text='Well Number'))
-			self.command_labels[-1].pack(anchor=tk.NW)
-			self.command_entries.append(tk.Entry(commandFrame))
-			self.command_entries[-1].pack(anchor=tk.NW)
+			colorFrame = tk.Frame(commandFrame)
+			colorFrame.pack(side=tk.TOP)
+			for color in self.colors:
+				frame = tk.Frame(colorFrame)
+				frame.pack(side=tk.RIGHT)
+				tk.Label(frame,text=color).pack(side=tk.TOP)
+				self.command_labels.append(tk.Label(frame,text='Well Number'))
+				self.command_labels[-1].pack(anchor=tk.NW)
+				self.command_entries.append(tk.Entry(frame))
+				self.command_entries[-1].pack(anchor=tk.NW)
 
-			self.command_labels.append(tk.Label(commandFrame,text='Frequency (Hz)'))
-			self.command_labels[-1].pack(anchor=tk.NW)
-			self.command_entries.append(tk.Entry(commandFrame))
-			self.command_entries[-1].pack(anchor=tk.NW)
+				self.command_labels.append(tk.Label(commandFrame,text='Frequency (Hz)'))
+				self.command_labels[-1].pack(anchor=tk.NW)
+				self.command_entries.append(tk.Entry(frame))
+				self.command_entries[-1].pack(anchor=tk.NW)
 
-			self.command_labels.append(tk.Label(commandFrame,text='Pulse duration (ms)'))
-			self.command_labels[-1].pack(anchor=tk.NW)
-			self.command_entries.append(tk.Entry(commandFrame))
-			self.command_entries[-1].pack(anchor=tk.NW)
+				self.command_labels.append(tk.Label(frame,text='Pulse duration (ms)'))
+				self.command_labels[-1].pack(anchor=tk.NW)
+				self.command_entries.append(tk.Entry(frame))
+				self.command_entries[-1].pack(anchor=tk.NW)
 		if protocol_listed == "Blocks":
 			pass
+		for entry in self.command_entries:
+			entry.insert(0,"0")
 
 	def open_timers(self):
 		self.timerFrame.destroy()

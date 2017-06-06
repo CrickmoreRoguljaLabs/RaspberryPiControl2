@@ -91,6 +91,6 @@ class Raspberry_Pi(object):
 		# End the ssh session and close the window
 		if use_ssh:
 			self.ssh.close()
-		if not self.window.stream is None:
-			self.window.stream.stop()
+		#if not self.window.stream is None:
+		#	self.window.stream.stop()
 		self.window.destroy()
