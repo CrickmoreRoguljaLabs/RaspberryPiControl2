@@ -1,5 +1,4 @@
 # a way to keep all the buttons in one place for a window corresponding to a Pi
-import paramiko
 import sys
 if sys.version_info[0] < 3:
     import Tkinter as tk
@@ -7,9 +6,11 @@ else:
 	import tkinter as tk
 import time
 import stopwatch
+from receive_image import VideoStream
+import threading
 
 class Command_Window(object):
-	def __init__(self, window,ListOfProtocols):
+	def __init__(self, window,ListOfProtocols,colors=["Red"],port=8000):
 		self.window = window
 		self.ListOfProtocols = ListOfProtocols
 		self.protFrame = tk.Frame(self.window)
@@ -17,13 +18,43 @@ class Command_Window(object):
 		self.historyFrame = tk.Frame(self.commandFrame)
 		self.timerFrame = tk.Frame(self.commandFrame)
 		self.videoFrame = tk.Frame(self.window)
+		self.videoFrame.pack(side=tk.RIGHT)
 		self.button_dict = {}
 		self.command_entries = []
 		self.command_labels = []
 		self.command_history = []
+		self.stream = None
+		self.panel = None
+		self.stop_vid = threading.Event()
+		self.colors = colors
 
 	def set_title(self, title):
 		self.window.title(title)
+
+	def demo_play_video(self, port=8000):
+		# for testing when ssh is off
+		pass 
+
+	def play_video(self,vid_shell,port=8000):
+		stream=VideoStream(port=port,vid_shell=vid_shell)
+		time.sleep(1)
+		threading.Thread(target=stream.play_video).start()
+		print self.stop_vid.is_set()
+		while not self.stop_vid.is_set():
+			frame = stream.read()
+			print frame
+			if self.panel is None:
+				self.panel = tk.Label(self.videoFrame,image=frame)
+				self.panel.image = frame
+				self.panel.pack(side=tk.TOP, padx=10, pady=10)
+		
+				# otherwise, simply update the panel
+			else:
+				self.panel.configure(image=frame)
+				self.panel.image = frame
+
+	def stop_video(self):
+		self.stop_vid.set()
 
 	def protocol_button(self,this_pi):
 		protFrame = self.protFrame
@@ -85,29 +116,37 @@ class Command_Window(object):
 		if protocol_listed == "Paired pulse":
 
 			self.command_labels.append(tk.Label(commandFrame,text='Well Number'))
-			self.command_labels[-1].pack(anchor=tk.NW)
+			self.command_labels[-1].pack(anchor=tk.N)
 			self.command_entries.append(tk.Entry(commandFrame))
-			self.command_entries[-1].pack(anchor=tk.NW)
+			self.command_entries[-1].pack(anchor=tk.N)
+			# if there are multiple colors, make multiple color command frames
+			colorFrame = tk.Frame(commandFrame)
+			colorFrame.pack(side=tk.TOP)
+			color_frame_dict = {}
+			for color in self.colors:
+				frame = tk.Frame(colorFrame)
+				frame.pack(side=tk.RIGHT)
+				tk.Label(frame,text=color).pack(side=tk.TOP)
+				# To revert, replace "frame" with "commandFrame"
+				self.command_labels.append(tk.Label(frame,text='Wait (min)'))
+				self.command_labels[-1].pack(anchor=tk.NW)
+				self.command_entries.append(tk.Entry(frame))
+				self.command_entries[-1].pack(anchor=tk.NW)
 
-			self.command_labels.append(tk.Label(commandFrame,text='Wait (min)'))
-			self.command_labels[-1].pack(anchor=tk.NW)
-			self.command_entries.append(tk.Entry(commandFrame))
-			self.command_entries[-1].pack(anchor=tk.NW)
+				self.command_labels.append(tk.Label(frame,text='First pulse (ms)'))
+				self.command_labels[-1].pack(anchor=tk.NW)
+				self.command_entries.append(tk.Entry(frame))
+				self.command_entries[-1].pack(anchor=tk.NW)
+				
+				self.command_labels.append(tk.Label(frame,text='Rest duration (s)'))
+				self.command_labels[-1].pack(anchor=tk.NW)
+				self.command_entries.append(tk.Entry(frame))
+				self.command_entries[-1].pack(anchor=tk.NW)
 
-			self.command_labels.append(tk.Label(commandFrame,text='First pulse (ms)'))
-			self.command_labels[-1].pack(anchor=tk.NW)
-			self.command_entries.append(tk.Entry(commandFrame))
-			self.command_entries[-1].pack(anchor=tk.NW)
-			
-			self.command_labels.append(tk.Label(commandFrame,text='Rest duration (s)'))
-			self.command_labels[-1].pack(anchor=tk.NW)
-			self.command_entries.append(tk.Entry(commandFrame))
-			self.command_entries[-1].pack(anchor=tk.NW)
-
-			self.command_labels.append(tk.Label(commandFrame,text='Second pulse (ms)'))
-			self.command_labels[-1].pack(anchor=tk.NW)
-			self.command_entries.append(tk.Entry(commandFrame))
-			self.command_entries[-1].pack(anchor=tk.NW)
+				self.command_labels.append(tk.Label(frame,text='Second pulse (ms)'))
+				self.command_labels[-1].pack(anchor=tk.NW)
+				self.command_entries.append(tk.Entry(frame))
+				self.command_entries[-1].pack(anchor=tk.NW)
 
 		if protocol_listed == "Flashing Lights":
 			self.command_labels.append(tk.Label(commandFrame,text='Well Number'))
@@ -134,28 +173,30 @@ class Command_Window(object):
 		tk.Label(self.timerFrame,text='Well Timers').pack(side=tk.TOP)
 		self.indTimersFrame = tk.Frame(self.timerFrame)
 		self.indTimersFrame.pack(side=tk.BOTTOM)
-		self.num_Timers = 0
-		butt = tk.Button(self.timerFrame,text="New timer",command=self.make_new_timer)
-		butt.pack(side=tk.TOP)
+		butt = tk.Button(self.indTimersFrame,text="New timer",command=self.make_new_timer)
+		butt.pack(side=tk.BOTTOM,anchor=tk.N)
 		self.make_new_timer()
 
 	def make_new_timer(self):
 		new_timer = tk.Frame(self.indTimersFrame)
-		new_timer.pack(side=tk.TOP)
-		row_val = self.num_Timers
+		new_timer.pack(side=tk.TOP,anchor=tk.N)
 		timer = tk.Entry(new_timer,width=5)
 		timer.insert(tk.END, 'Well #')
-		timer.grid(row=row_val,column=0)
+		timer.pack(side=tk.LEFT)
 		sw = stopwatch.StopWatch(parent=new_timer)
-		sw.grid(row=row_val,column=1)
+		sw.pack(side=tk.LEFT)
 		start_button = tk.Button(new_timer,text="Start",command=sw.Start)
-		start_button.grid(row=row_val,column=2)
+		start_button.pack(side=tk.LEFT)
 		stop_button = tk.Button(new_timer,text="Stop",command=sw.Stop)
-		stop_button.grid(row=row_val,column=3)
+		stop_button.pack(side=tk.LEFT)
 		reset_button = tk.Button(new_timer,text="Reset",command=sw.Reset)
-		reset_button.grid(row=row_val,column=4)
-		self.num_Timers = self.num_Timers +1
+		reset_button.pack(side=tk.LEFT)
+		destroy_button = tk.Button(new_timer,text="Destroy",command= lambda: self.destroy_timer(timer,sw,start_button,stop_button,reset_button,destroy_button))
+		destroy_button.pack(side=tk.LEFT)
 
+	def destroy_timer(self, *args):
+		for arg in args:
+			arg.destroy()
 
 	def remove_button(self,name_of_button):
 		self.button_dict[name_of_button].pack_forget()

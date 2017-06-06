@@ -1,4 +1,5 @@
 ## GUI for raspis. I'm just learning paramiko, don't make fun of me =(
+# This has turned into an organizational shitshow. I'm sorry to anyone who has to try to work on this. Probably including future me.
 ## SCT Feb. 2017
 
 import paramiko
@@ -11,13 +12,15 @@ import time
 from command_window import Command_Window
 from raspberry_pi import Raspberry_Pi
 
-def pi_connect(address):
+def pi_connect(address,ID):
 	## Connect to a raspberry pi at location address.
 	try:
-		this_pi = Raspberry_Pi(address,master)
+		ID = [address,ID]
+		this_pi = Raspberry_Pi(ID,master,colors=color_dict[ID[1]])
 		ListOfPis.append(this_pi)
 	except:
-		connection_error()
+		print sys.exc_info()
+		#connection_error()
 
 def connection_error():
 	error_window = tk.Toplevel(master)
@@ -39,10 +42,22 @@ tk.Label(master, text="Pi address").grid(row=0)
 # PUT THE IP ADDRESSES OF EACH PI HERE
 # you can use a dictionary to make aliases and do it that way
 # if you need help remembering who's who
-ListOfAddresses=[ "10.32.64.132", "10.32.64.93", 
+ListOfAddresses=[ "10.32.64.132",
+	"10.32.64.93", 
+	"10.32.64.172",
 	"10.32.64.180", 
 	"10.32.64.110"]
-ListOfAliases=["Single Wells (1)", "Single Wells (2)", "Green / red water", "Green / red"]
+ListOfAliases=["Single Wells (1)", 
+	"Single Wells (2)",
+	"Water (red) (left)" ,
+	"Green / red water", 
+	"Green / red"]
+
+color_dict = {"Single Wells (1)":["Red"], 
+	"Single Wells (2)":["Red"],
+	"Water (red) (left)":["Red"],
+	"Green / red water":["Red","Green"], 
+	"Green / red":["Red","Green"]}
 
 alias_address_map = dict(zip(ListOfAliases,ListOfAddresses))
 
@@ -51,7 +66,8 @@ add.set(ListOfAliases[0]) # default value
 
 w = tk.OptionMenu(master, add, *ListOfAliases)
 w.grid(row=0, column=1)
-conn_button = tk.Button(master, text='Connect', command=lambda: pi_connect(alias_address_map[add.get()]))
+print alias_address_map[add.get()],add.get()
+conn_button = tk.Button(master, text='Connect', command=lambda: pi_connect(alias_address_map[add.get()],add.get()))
 conn_button.grid(row=0, column=2)
 tk.Button(master, text='Quit', command=lambda: close_down()).grid(row=7, column=0, pady=4)
 master.mainloop()
