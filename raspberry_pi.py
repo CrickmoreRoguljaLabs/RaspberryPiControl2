@@ -9,6 +9,7 @@ import threading
 from command_window import Command_Window
 
 use_ssh = True
+test_video = True
 
 class Raspberry_Pi(object):
 	# Defines the raspberry pi class with address IP_ADDRESS, controls shell interactions with the Pi using paramiko
@@ -16,6 +17,12 @@ class Raspberry_Pi(object):
 	def __init__(self,ID,master,colors=["Red"]):
 		self.IP_ADDRESS = ID[0]
 		ListOfProtocols = ["Paired pulse", "Flashing Lights", "Blocks"]
+		self.window = Command_Window(tk.Toplevel(master),ListOfProtocols,colors=colors)
+		self.window.set_title(ID[1])
+
+		self.window.protocol_button(self)
+		self.window.quit_button(lambda: self.close_pi())
+
 		if use_ssh:
 			ssh = paramiko.SSHClient()
 			ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
@@ -26,30 +33,16 @@ class Raspberry_Pi(object):
 			#vid_shell.connect(ID[0],username='pi',password='raspberry')
 			#self.vid_shell = vid_shell
 			#self.build_video_frame(self.vid_shell)
-		if not use_ssh:
+		if (not use_ssh) or test_video:
 			self.demo_video_frame()
-
-		self.window = Command_Window(tk.Toplevel(master),ListOfProtocols,colors=colors)
-		self.window.set_title(ID[1])
-
-		self.window.protocol_button(self)
-		self.window.quit_button(lambda: self.close_pi())
 	
 	def demo_video_frame(self):
 		# for testing before ssh is implemented
-		start_vid_button = tk.Button(self.window.videoFrame,text="Start video",command = lambda: self.demo_start_video(start_vid_button))
-		start_vid_button.pack()
+		self.window.make_video_frame()
 
 	def build_video_frame(self, vid_shell):
 		start_vid_button = tk.Button(self.window.videoFrame,text="Start video",command = lambda: self.start_video(start_vid_button, vid_shell))
 		start_vid_button.pack()
-
-	def demo_start_video(self,start_vid_button):
-		# for testing before ssh is implemented 
-		start_vid_button.destroy()
-		threading.Thread(target=self.window.demo_play_video()).start()
-		stop_vid_button = tk.Button(self.window.videoFrame,text="Stop video",command = lambda: self.stop_video(stop_vid_button))
-		stop_vid_button.pack(side=tk.BOTTOM)
 
 	def start_video(self,start_vid_button,vid_shell):
 		start_vid_button.destroy()

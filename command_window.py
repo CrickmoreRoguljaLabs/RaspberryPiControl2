@@ -4,10 +4,11 @@ if sys.version_info[0] < 3:
     import Tkinter as tk
 else:
 	import tkinter as tk
+from PIL import ImageTk, Image
 import time
 import stopwatch
 #from receive_image import VideoStream
-import threading
+import multiprocessing
 
 class Command_Window(object):
 	def __init__(self, window,ListOfProtocols,colors=["Red"],port=8000):
@@ -17,23 +18,44 @@ class Command_Window(object):
 		self.commandFrame = tk.Frame(self.window)
 		self.historyFrame = tk.Frame(self.commandFrame)
 		self.timerFrame = tk.Frame(self.commandFrame)
-		#self.videoFrame = tk.Frame(self.window)
-		#self.videoFrame.pack(side=tk.RIGHT)
+		self.videoFrame = tk.Frame(self.window)
+		self.videoFrame.pack(side=tk.RIGHT)
 		self.button_dict = {}
 		self.command_entries = []
 		self.command_labels = []
 		self.command_history = []
+		self.streaming = False
 		#self.stream = None
-		#self.panel = None
+		self.panel = tk.Label(self.videoFrame)
 		#self.stop_vid = threading.Event()
 		self.colors = colors
 
 	def set_title(self, title):
 		self.window.title(title)
 
+	def make_video_frame(self):
+		self.start_vid_button = tk.Button(self.videoFrame,text="Start video",command = lambda: self.demo_start_video())
+		self.start_vid_button.pack()
+
+	def demo_start_video(self):
+		# for testing before ssh is implemented 
+		self.start_vid_button.destroy()
+		#self.window.demo_play_video()
+		self.stream_process = multiprocessing.Process(target=self.demo_play_video()).start()
+		self.stream_process.start()
+		self.stop_vid_button = tk.Button(self.videoFrame,text="Stop video",command = lambda: self.stop_video())
+		self.stop_vid_button.pack(side=tk.BOTTOM)
+
 	def demo_play_video(self, port=8000):
-		# for testing when ssh is off
-		pass 
+		self.streaming = True
+		image_path = "/Users/stephen/Desktop/Pi Control/cameraman.jpg"
+		img = ImageTk.PhotoImage(Image.open(image_path))
+		self.panel.image = img # keep a reference!
+		self.panel.pack()
+		while self.streaming:
+			self.panel.image = img
+			self.panel.config(image = img)
+		self.panel.pack()
 
 #	def play_video(self,vid_shell,port=8000):
 #		stream=VideoStream(port=port,vid_shell=vid_shell)
@@ -53,8 +75,13 @@ class Command_Window(object):
 #				self.panel.configure(image=frame)
 #				self.panel.image = frame
 
-#	def stop_video(self):
-#		self.stop_vid.set()
+	def stop_video(self):
+		self.streaming = False
+		self.stream_process.terminate()
+		self.panel.destroy()
+		self.make_video_frame()
+		self.stop_vid_button.destroy()
+
 
 	def protocol_button(self,this_pi):
 		protFrame = self.protFrame
@@ -149,9 +176,9 @@ class Command_Window(object):
 
 		if protocol_listed == "Flashing Lights":
 			self.command_labels.append(tk.Label(commandFrame,text='Well Number'))
-			self.command_labels[-1].pack(anchor=tk.NW)
+			self.command_labels[-1].pack(anchor=tk.N)
 			self.command_entries.append(tk.Entry(commandFrame))
-			self.command_entries[-1].pack(anchor=tk.NW)
+			self.command_entries[-1].pack(anchor=tk.N)
 			colorFrame = tk.Frame(commandFrame)
 			colorFrame.pack(side=tk.TOP)
 			for color in self.colors:
@@ -159,7 +186,7 @@ class Command_Window(object):
 				frame.pack(side=tk.RIGHT)
 				tk.Label(frame,text=color).pack(side=tk.TOP)
 
-				self.command_labels.append(tk.Label(commandFrame,text='Frequency (Hz)'))
+				self.command_labels.append(tk.Label(frame,text='Frequency (Hz)'))
 				self.command_labels[-1].pack(anchor=tk.NW)
 				self.command_entries.append(tk.Entry(frame))
 				self.command_entries[-1].pack(anchor=tk.NW)
@@ -169,7 +196,36 @@ class Command_Window(object):
 				self.command_entries.append(tk.Entry(frame))
 				self.command_entries[-1].pack(anchor=tk.NW)
 		if protocol_listed == "Blocks":
-			pass
+			self.command_labels.append(tk.Label(commandFrame,text='Well Number'))
+			self.command_labels[-1].pack(anchor=tk.N)
+			self.command_entries.append(tk.Entry(commandFrame))
+			self.command_entries[-1].pack(anchor=tk.N)
+			colorFrame = tk.Frame(commandFrame)
+			colorFrame.pack(side=tk.TOP)
+			for color in self.colors:
+				frame = tk.Frame(colorFrame)
+				frame.pack(side=tk.RIGHT)
+				tk.Label(frame,text=color).pack(side=tk.TOP)
+
+				self.command_labels.append(tk.Label(frame,text='Frequency (Hz)'))
+				self.command_labels[-1].pack(anchor=tk.NW)
+				self.command_entries.append(tk.Entry(frame))
+				self.command_entries[-1].pack(anchor=tk.NW)
+
+				self.command_labels.append(tk.Label(frame,text='Pulse duration (ms)'))
+				self.command_labels[-1].pack(anchor=tk.NW)
+				self.command_entries.append(tk.Entry(frame))
+				self.command_entries[-1].pack(anchor=tk.NW)
+
+				self.command_labels.append(tk.Label(frame,text='Duration of block (ms)'))
+				self.command_labels[-1].pack(anchor=tk.NW)
+				self.command_entries.append(tk.Entry(frame))
+				self.command_entries[-1].pack(anchor=tk.NW)
+
+				self.command_labels.append(tk.Label(frame,text='Time between start\nof each block (ms)'))
+				self.command_labels[-1].pack(anchor=tk.NW)
+				self.command_entries.append(tk.Entry(frame))
+				self.command_entries[-1].pack(anchor=tk.NW)
 		for entry in self.command_entries:
 			entry.insert(0,"0")
 
