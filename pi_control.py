@@ -1,5 +1,6 @@
 ## GUI for raspis. I'm just learning paramiko, don't make fun of me =(
 # This has turned into an organizational shitshow. I'm sorry to anyone who has to try to work on this. Probably including future me.
+# Spaghetti code
 ## SCT Feb. 2017
 
 import paramiko

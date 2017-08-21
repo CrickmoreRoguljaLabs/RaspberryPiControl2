@@ -1,4 +1,5 @@
 # a way to keep all the buttons in one place for a window corresponding to a Pi
+# The most spaghetti of codes. Perhaps some day I'll rewrite it to be pretty. For now, it just works.
 import sys
 if sys.version_info[0] < 3:
     import Tkinter as tk
@@ -7,11 +8,13 @@ else:
 from PIL import ImageTk, Image
 import time
 import stopwatch
-#from receive_image import VideoStream
+import StimConstructor
+import os
+import json
 import multiprocessing
 
 class Command_Window(object):
-	def __init__(self, window,ListOfProtocols,colors=["Red"],port=8000):
+	def __init__(self, window,ListOfProtocols,pi,colors=["Red"],port=8000):
 		self.window = window
 		self.ListOfProtocols = ListOfProtocols
 		self.protFrame = tk.Frame(self.window)
@@ -25,13 +28,16 @@ class Command_Window(object):
 		self.command_labels = []
 		self.command_history = []
 		self.streaming = False
+		self.pi = pi
 		#self.stream = None
 		self.panel = tk.Label(self.videoFrame)
 		#self.stop_vid = threading.Event()
 		self.colors = colors
 
+
 	def set_title(self, title):
 		self.window.title(title)
+		self.title = title
 
 	def make_video_frame(self):
 		self.start_vid_button = tk.Button(self.videoFrame,text="Start video",command = lambda: self.demo_start_video())
@@ -54,7 +60,7 @@ class Command_Window(object):
 		self.panel.pack()
 		while self.streaming:
 			self.panel.image = img
-			self.panel.config(image = img)
+			self.panel.after(10,lambda: self.panel.config(image = img))
 		self.panel.pack()
 
 #	def play_video(self,vid_shell,port=8000):
@@ -94,6 +100,9 @@ class Command_Window(object):
 		protbut.pack(side=tk.LEFT, anchor=tk.W)
 		self.button_dict['Run protocol']=protbut
 		self.protFrame = protFrame
+		self.mode = tk.IntVar()
+		self.mode_box = tk.Checkbutton(self.protFrame, text="Use stimulus constructor", variable=self.mode)
+		self.mode_box.pack()
 
 	def quit_button(self,command):
 		botFrame = tk.Frame(self.window)
@@ -107,38 +116,61 @@ class Command_Window(object):
 
 	def prot_specs(self,protocol_listed,pi):
 		# Establish a frame with the option to send commands
+
+		# Clear out the old ones
 		map(lambda entry: entry.destroy(), self.command_entries)
 		map(lambda label: label.destroy(), self.command_labels)
-		if "Send command" in self.button_dict:
-			self.button_dict["Send command"].destroy()
-		self.command_entries = []
-		self.command_labels = []
-		self.command_history = []
-		self.commandFrame.destroy()
-		commandFrame = tk.Frame(self.window)
-		commandFrame.pack(anchor=tk.NW)
-		self.historyFrame.destroy()
-		callFrame = tk.Frame(commandFrame)
-		callFrame.pack(side=tk.LEFT,anchor=tk.NW)
-		historyFrame = tk.Frame(commandFrame)
-		historyFrame.pack(side=tk.LEFT,padx=15,anchor=tk.NW)
-		self.set_up_protocol(callFrame,protocol_listed)
-		historyLabelFrame = tk.Frame(historyFrame)
-		historyLabelFrame.pack(side=tk.TOP,anchor=tk.NW)
-		tk.Label(historyLabelFrame,text="Command History").grid(row= 0, column=1)
-		tk.Label(historyLabelFrame,text="Time").grid(row=1,column=0)
-		tk.Label(historyLabelFrame,text="Command").grid(row=1,column=2)
-		historyValFrame = tk.Frame(historyFrame)
-		historyValFrame.pack(side=tk.BOTTOM)
+		self.mode_box.destroy()
+		## Make sure that the old "New stimulus" button is destroyed.
+		try:
+			self.new_stimulus.destroy()
+		except:
+			pass
+		# If using "stim constructor"
+		if self.mode.get():
+			self.well_frames = []
+			self.commandFrame.destroy()
+			self.commandFrame = tk.Frame(self.window)
+			self.commandFrame.pack(anchor=tk.NW)
+			self.new_stimulus = tk.Button(self.protFrame,text="New stimulus", command=lambda: self.new_stim(protocol_listed = protocol_listed))
+			self.new_stimulus.pack(side=tk.RIGHT)
+			self.stim_constructor_setup(protocol_listed)
+		else:
+			## OLD PROTOCOL STYLE
+			if "Send command" in self.button_dict:
+				self.button_dict["Send command"].destroy()
+			self.command_entries = []
+			self.command_labels = []
+			self.command_history = []
+			self.commandFrame.destroy()
+			commandFrame = tk.Frame(self.window)
+			commandFrame.pack(anchor=tk.NW)
+			self.historyFrame.destroy()
+			callFrame = tk.Frame(commandFrame)
+			callFrame.pack(side=tk.LEFT,anchor=tk.NW)
+			historyFrame = tk.Frame(commandFrame)
+			historyFrame.pack(side=tk.LEFT,padx=15,anchor=tk.NW)
+			self.set_up_protocol(callFrame,protocol_listed)
+			historyLabelFrame = tk.Frame(historyFrame)
+			historyLabelFrame.pack(side=tk.TOP,anchor=tk.NW)
+			tk.Label(historyLabelFrame,text="Command History").grid(row= 0, column=1)
+			tk.Label(historyLabelFrame,text="Time").grid(row=1,column=0)
+			tk.Label(historyLabelFrame,text="Command").grid(row=1,column=2)
+			historyValFrame = tk.Frame(historyFrame)
+			historyValFrame.pack(side=tk.BOTTOM)
 
-		send_command = tk.Button(callFrame,text="Send command",command=pi.send_command)
-		send_command.pack(anchor=tk.S)
-		self.button_dict["Send command"] = send_command
-		self.commandFrame = commandFrame
-		self.historyFrame = historyFrame
-		self.historyValFrame = historyValFrame
+			send_command = tk.Button(callFrame,text="Send command",command=pi.send_command)
+			send_command.pack(anchor=tk.S)
+			self.button_dict["Send command"] = send_command
+			self.commandFrame = commandFrame
+			self.historyFrame = historyFrame
+			self.historyValFrame = historyValFrame
 
 	def set_up_protocol(self, commandFrame, protocol_listed):
+		### Sets up the commands used. Should be rewritten now that I have the "attributes" stored .pi objects, but this works fine for now
+		### but it looks like a real mess.
+		if "Green" in self.colors:
+			tk.Button(commandFrame,text="Update green intensity", command= lambda: self.update_intensity()).pack(side=tk.TOP)
 		## Sets up all the fields entered for each protocol
 		if protocol_listed == "Paired pulse":
 
@@ -229,6 +261,19 @@ class Command_Window(object):
 		for entry in self.command_entries:
 			entry.insert(0,"0")
 
+	def update_intensity(self):
+		## For updating the intensity of the green lights
+		intensity_window = tk.Toplevel(self.window)
+		intensity_window.title("Update green intensity (%s)" %self.title)
+		intensity_entry = tk.Entry(intensity_window)
+		intensity_entry.insert(tk.END, "Intensity (between 0 and 1) (Default is .178)")
+		intensity_entry.pack(side=tk.LEFT)
+		# Ok so this looks ridiculous: I cast to a float, then back to a string, from a string, but it's so people
+		# can type floats their own way and it all gets treated the same by the Arduino, which interprets input poorly
+		update = tk.Button( intensity_window,command=lambda: self.pi.update_intensity(str(float(intensity_entry.get()))) ,
+			text="Update intensity")
+		update.pack()
+
 	def open_timers(self):
 		self.timerFrame.destroy()
 		self.timerFrame = tk.Frame(self.commandFrame)
@@ -260,6 +305,63 @@ class Command_Window(object):
 	def destroy_timer(self, *args):
 		for arg in args:
 			arg.destroy()
+
+	def new_stim(self, protocol_listed):
+	# Set up a condition for making a new stimulation protocol
+		StimConstructor.StimConstructor(tk.Toplevel(self.window),protocol_listed, self.colors)
+
+	def new_well_entry(self):
+		# Create the buttons to select a stimulus for a particular well
+		well_frame = tk.Frame(self.framesForWells)
+		well_frame.pack(side=tk.TOP)
+		self.well_frames.append(well_frame)
+		well_num_entry = tk.Entry(well_frame, width = 3)
+		well_num_entry.insert(0,"Well number")
+		well_num_entry.pack(side=tk.LEFT)
+		stimulus = tk.StringVar()
+		stimlist = tk.OptionMenu(well_frame,stimulus, *self.ListOfProtocols)
+		stimlist.config(width=15)
+		stimlist.pack(side=tk.LEFT)
+		send_command_button = tk.Button(well_frame,text="Send commands",command= self.run_block(stimulus.get()))
+		send_command_button.pack(side=tk.LEFT)
+
+	def run_block(self,stimulus):
+		pass
+
+	def stim_constructor_setup(self, protocol_listed):
+	## Sets up the command window for using saved .pi files
+	# First clear out the old wells
+		try:
+			map(lambda frame: frame.destroy(),self.well_frames)
+			self.button_dict["New Well"].destroy()
+		except:
+			pass
+		#self.commandFrame.pack(anchor=tk.NW)
+		if "Green" in self.colors:
+				tk.Button(self.commandFrame,text="Update green intensity", command= lambda: self.update_intensity()).pack(side=tk.TOP)
+		#self.button_dict["New Well"] = tk.Button(self.commandFrame, text="New well", command = lambda: self.new_well_entry())
+		#self.button_dict["New Well"].pack(side=tk.BOTTOM)
+		self.framesForWells = tk.Frame(self.commandFrame)
+		self.framesForWells.pack(side=tk.TOP)
+		tk.Button(self.commandFrame, text="New well", command = lambda: self.new_well_entry()).pack(side=tk.BOTTOM)
+
+
+	# def load_stim(pi_file):
+# 	# return the list of blocks in the file pi_file
+# 	data = json.load(pi_file)
+# 	block_list = []
+# 	for block_attributes in data:
+# 		block_list.append(StimConstructor.load_block(block_attributes))
+# 	return block_list
+
+# def read_stim(block_list, well_number):
+# 	# reads a list of blocks, and sends the protocols sequentially, each for the duration within its "duration" attribute
+# 	for block in block_list:
+# 		light_command = block.return_commands()
+# 		command = "%s,%s" %str(well_number), light_command
+# 		self.pi.send_command(command)
+# 		# sleep for the duration
+# 		time.sleep(block.duration*60.0)
 
 	def remove_button(self,name_of_button):
 		self.button_dict[name_of_button].pack_forget()
