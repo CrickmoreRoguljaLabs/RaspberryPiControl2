@@ -17,7 +17,7 @@ def load_stim(pi_file):
 		block_list.append(StimConstructor.load_block(block_attributes))
 	return block_list
 
-def read_stim(block_list)
+def read_stim(block_list):
 	# reads a list of blocks, and sends the protocols sequentially, each for the duration within its "duration" attribute
 	for block in block_list:
 		pass
