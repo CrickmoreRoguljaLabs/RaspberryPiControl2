@@ -8,7 +8,7 @@ from StimulusBlock import StimulusBlock
 import json
 
 class StimConstructor(object):
-	def __init__(self,window,protocol,colors):
+	def __init__(self,window,protocol,colors,pi=None):
 		# Build a stimulus constructor to be used in any well
 		# Restricted to using a single "protocol" type, but should be fairly flexible anyways
 		self.protocol = protocol
@@ -26,6 +26,7 @@ class StimConstructor(object):
 		self.name_text.set("Stimulus name")
 		self.save_stimulus_button = tk.Button(initialFrame,text="Save stimulus",command = lambda: self.save_stimulus())
 		self.save_stimulus_button.pack(side=tk.LEFT)
+		self.pi = pi
 
 	def new_block_window(self):
 		# create a new block with a list of parameters
@@ -70,7 +71,8 @@ class StimConstructor(object):
 
 	def create_block(self,block,blockWindow,blockFrame,blockDuration):
 		# Create a new block and display it in the stimulus constructor window
-		block.duration = float(blockDuration[0].get())*((1/60.0)**(int(blockDuration[1].get() == "sec")))
+		duration = float(blockDuration[0].get())*float((1/60.0)**(int(blockDuration[1].get() == "sec")))
+		block.set_duration(duration)
 		tk.Label(blockFrame,text="Duration: %f minutes" % block.duration).pack(side=tk.TOP)
 		for color in block.colors:
 			# window for each color
@@ -82,18 +84,23 @@ class StimConstructor(object):
 			for field in block.param_fields:
 				tk.Label(color_frame,text="%s: %s" % (field, block.color_params[color][field])).pack(side=tk.TOP)
 		self.blocks.append(block)
-		print block
+		print block.duration
 		blockWindow.destroy()
 
 
 	def save_stimulus(self):
 		# save the stimulus as a ".pi" file, which contains the JSON formatted stimulation blocks
 		self.window.destroy()
-		print self.name_text.get()
-		with open("stimuli//%s.pi" %self.name_text.get(),'w') as stim_file:
-			stimcoll = [block.attributes for block in self.blocks]
-			print stimcoll
-			json.dump(stimcoll,stim_file)
+		if self.pi is not None:
+			with self.pi.sftp_client.open("stimuli//%s.pi" %self.name_text.get(),mode='w') as stim_file:
+				stimcoll = [block.attributes for block in self.blocks]
+				json.dump(stimcoll,stim_file)
+				print "on pi"
+		else:
+			with open("stimuli//%s.pi" %self.name_text.get(),'w') as stim_file:
+				stimcoll = [block.attributes for block in self.blocks]
+				json.dump(stimcoll,stim_file)
+
 
 def load_block(attributes):
 	# builds a stimulus block from the attributes and returns the block

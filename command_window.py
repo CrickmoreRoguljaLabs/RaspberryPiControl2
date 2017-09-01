@@ -308,24 +308,36 @@ class Command_Window(object):
 
 	def new_stim(self, protocol_listed):
 	# Set up a condition for making a new stimulation protocol
-		StimConstructor.StimConstructor(tk.Toplevel(self.window),protocol_listed, self.colors)
+		StimConstructor.StimConstructor(tk.Toplevel(self.window),protocol_listed, self.colors,pi=self.pi)
 
 	def new_well_entry(self):
 		# Create the buttons to select a stimulus for a particular well
 		well_frame = tk.Frame(self.framesForWells)
 		well_frame.pack(side=tk.TOP)
 		self.well_frames.append(well_frame)
-		well_num_entry = tk.Entry(well_frame, width = 3)
-		well_num_entry.insert(0,"Well number")
+		well_num_entry = tk.Entry(well_frame, width = 5)
+		well_num_entry.insert(0,"Well #")
 		well_num_entry.pack(side=tk.LEFT)
 		stimulus = tk.StringVar()
-		stimlist = tk.OptionMenu(well_frame,stimulus, *self.ListOfProtocols)
+		stimulus.set(list(self.pi.stim_dict.keys())[0])
+		stimlist = tk.OptionMenu(well_frame,stimulus, *list(self.pi.stim_dict.keys()))
 		stimlist.config(width=15)
 		stimlist.pack(side=tk.LEFT)
-		send_command_button = tk.Button(well_frame,text="Send commands",command= self.run_block(stimulus.get()))
+		send_command_button = tk.Button(well_frame,text="Send commands",command= lambda: self.run_block(well_num_entry.get(), stimulus.get()))
 		send_command_button.pack(side=tk.LEFT)
 
-	def run_block(self,stimulus):
+	def run_block(self,well_num, stimulus):
+		# Run the block in the input well well_num
+		block_list = self.pi.stim_dict[stimulus]
+		for block in block_list:
+			# returns, in string form, the commands for that well
+			comm = block.return_commands()
+			self.pi.command_verbatim(",".join([well_num,comm]))
+			print ",".join([well_num,comm])
+			print block.duration
+			time.sleep(60*float(block.duration))
+			if float(block.duration) == 0:
+				break
 		pass
 
 	def stim_constructor_setup(self, protocol_listed):
@@ -344,15 +356,6 @@ class Command_Window(object):
 		self.framesForWells = tk.Frame(self.commandFrame)
 		self.framesForWells.pack(side=tk.TOP)
 		tk.Button(self.commandFrame, text="New well", command = lambda: self.new_well_entry()).pack(side=tk.BOTTOM)
-
-
-	# def load_stim(pi_file):
-# 	# return the list of blocks in the file pi_file
-# 	data = json.load(pi_file)
-# 	block_list = []
-# 	for block_attributes in data:
-# 		block_list.append(StimConstructor.load_block(block_attributes))
-# 	return block_list
 
 # def read_stim(block_list, well_number):
 # 	# reads a list of blocks, and sends the protocols sequentially, each for the duration within its "duration" attribute

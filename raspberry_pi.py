@@ -6,6 +6,8 @@ if sys.version_info[0] < 3:
 else:
 	import tkinter as tk
 import time
+import json
+import StimConstructor
 import threading
 from command_window import Command_Window
 
@@ -29,6 +31,8 @@ class Raspberry_Pi(object):
 			ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 			ssh.connect(ID[0],username='pi',password='raspberry')
 			self.ssh = ssh
+			self.sftp_client = self.ssh.open_sftp()
+			self.stim_dict = self.retrieve_stim_dict()
 			#vid_shell = paramiko.SSHClient()
 			#vid_shell.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 			#vid_shell.connect(ID[0],username='pi',password='raspberry')
@@ -37,6 +41,25 @@ class Raspberry_Pi(object):
 		if (not use_ssh) or test_video:
 			self.demo_video_frame()
 	
+	def retrieve_stim_dict(self):
+ 	# return a dict mapping file name to a collection of blocks
+ 		list_of_stimuli_files = [file for file in self.sftp_client.listdir('./stimuli') if file.endswith('.pi')]
+ 		stim_dict = {}
+ 		for file in list_of_stimuli_files:
+ 			print './stimuli/%s'%file
+			remote_file = self.sftp_client.open('./stimuli/%s'%file,mode='r')
+			try:
+	 			data = json.load(remote_file)
+		 		block_list = []
+		 		for block_attributes in data:
+		 			block_list.append(StimConstructor.load_block(block_attributes))
+		 		remote_file.close()
+		 		stim_dict[file] = block_list
+		 	except:
+		 		# Live dangerously
+		 		pass
+	 	return stim_dict
+
 	def demo_video_frame(self):
 		# for testing before ssh is implemented
 		self.window.make_video_frame()

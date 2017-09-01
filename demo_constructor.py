@@ -15,6 +15,8 @@ def load_stim(pi_file):
 	block_list = []
 	for block_attributes in data:
 		block_list.append(StimConstructor.load_block(block_attributes))
+	for block in block_list:
+		print block.return_commands()
 	return block_list
 
 def read_stim(block_list):
