@@ -45,7 +45,7 @@ tk.Label(master, text="Pi address").grid(row=0)
 # if you need help remembering who's who
 ListOfAddresses=[ "10.32.64.132",
 	"10.32.64.93", 
-	"10.32.64.172",
+	"10.32.64.135",
 	"10.32.64.180", 
 	"10.32.64.110",
 	"10.32.64.69"]

@@ -46,7 +46,7 @@ class Raspberry_Pi(object):
  		list_of_stimuli_files = [file for file in self.sftp_client.listdir('./stimuli') if file.endswith('.pi')]
  		stim_dict = {}
  		for file in list_of_stimuli_files:
- 			print './stimuli/%s'%file
+ 			#print './stimuli/%s'%file
 			remote_file = self.sftp_client.open('./stimuli/%s'%file,mode='r')
 			try:
 	 			data = json.load(remote_file)

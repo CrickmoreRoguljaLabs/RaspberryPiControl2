@@ -11,7 +11,8 @@ import stopwatch
 import StimConstructor
 import os
 import json
-import multiprocessing
+#import multiprocessing
+import threading
 
 class Command_Window(object):
 	def __init__(self, window,ListOfProtocols,pi,colors=["Red"],port=8000):
@@ -98,6 +99,7 @@ class Command_Window(object):
 		protlist.pack(side=tk.LEFT, anchor=tk.W)
 		protbut = tk.Button(protFrame, text='Run protocol',command=lambda: this_pi.run_prot(protocols.get()))
 		protbut.pack(side=tk.LEFT, anchor=tk.W)
+		self.protocols = protocols
 		self.button_dict['Run protocol']=protbut
 		self.protFrame = protFrame
 		self.mode = tk.IntVar()
@@ -132,9 +134,9 @@ class Command_Window(object):
 			self.commandFrame.destroy()
 			self.commandFrame = tk.Frame(self.window)
 			self.commandFrame.pack(anchor=tk.NW)
-			self.new_stimulus = tk.Button(self.protFrame,text="New stimulus", command=lambda: self.new_stim(protocol_listed = protocol_listed))
+			self.new_stimulus = tk.Button(self.protFrame,text="New stimulus", command=lambda: self.new_stim(protocol_listed = self.protocols.get()))
 			self.new_stimulus.pack(side=tk.RIGHT)
-			self.stim_constructor_setup(protocol_listed)
+			self.stim_constructor_setup(self.protocols.get())
 		else:
 			## OLD PROTOCOL STYLE
 			if "Send command" in self.button_dict:
@@ -323,8 +325,12 @@ class Command_Window(object):
 		stimlist = tk.OptionMenu(well_frame,stimulus, *list(self.pi.stim_dict.keys()))
 		stimlist.config(width=15)
 		stimlist.pack(side=tk.LEFT)
-		send_command_button = tk.Button(well_frame,text="Send commands",command= lambda: self.run_block(well_num_entry.get(), stimulus.get()))
+		send_command_button = tk.Button(well_frame,text="Send commands",command= lambda: self.block_thread(well_num_entry.get(), stimulus.get()))
 		send_command_button.pack(side=tk.LEFT)
+
+	def block_thread(self,well_num,stimulus):
+		thr = threading.Thread(target=self.run_block, args=(well_num, stimulus))
+		thr.start()
 
 	def run_block(self,well_num, stimulus):
 		# Run the block in the input well well_num
@@ -353,6 +359,7 @@ class Command_Window(object):
 				tk.Button(self.commandFrame,text="Update green intensity", command= lambda: self.update_intensity()).pack(side=tk.TOP)
 		#self.button_dict["New Well"] = tk.Button(self.commandFrame, text="New well", command = lambda: self.new_well_entry())
 		#self.button_dict["New Well"].pack(side=tk.BOTTOM)
+		#self.pool =multiprocessing.Pool(processes=12)
 		self.framesForWells = tk.Frame(self.commandFrame)
 		self.framesForWells.pack(side=tk.TOP)
 		tk.Button(self.commandFrame, text="New well", command = lambda: self.new_well_entry()).pack(side=tk.BOTTOM)
