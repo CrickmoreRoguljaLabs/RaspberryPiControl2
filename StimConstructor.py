@@ -100,7 +100,7 @@ class StimConstructor(object):
 			with open("stimuli//%s.pi" %self.name_text.get(),'w') as stim_file:
 				stimcoll = [block.attributes for block in self.blocks]
 				json.dump(stimcoll,stim_file)
-
+		self.pi.window.update_stimuli_menus()
 
 def load_block(attributes):
 	# builds a stimulus block from the attributes and returns the block

@@ -323,14 +323,19 @@ class Command_Window(object):
 		stimulus = tk.StringVar()
 		stimulus.set(list(self.pi.stim_dict.keys())[0])
 		stimlist = tk.OptionMenu(well_frame,stimulus, *list(self.pi.stim_dict.keys()))
+		self.stimuli_menu_dict[stimlist] = stimulus
 		stimlist.config(width=15)
 		stimlist.pack(side=tk.LEFT)
 		send_command_button = tk.Button(well_frame,text="Send commands",command= lambda: self.block_thread(well_num_entry.get(), stimulus.get()))
 		send_command_button.pack(side=tk.LEFT)
 
 	def block_thread(self,well_num,stimulus):
-		thr = threading.Thread(target=self.run_block, args=(well_num, stimulus))
-		thr.start()
+		try:
+			thr = threading.Thread(target=self.run_block, args=(well_num, stimulus))
+			thr.start()
+		except:
+			# Eventually throw error
+			pass
 
 	def run_block(self,well_num, stimulus):
 		# Run the block in the input well well_num
@@ -357,12 +362,20 @@ class Command_Window(object):
 		#self.commandFrame.pack(anchor=tk.NW)
 		if "Green" in self.colors:
 				tk.Button(self.commandFrame,text="Update green intensity", command= lambda: self.update_intensity()).pack(side=tk.TOP)
-		#self.button_dict["New Well"] = tk.Button(self.commandFrame, text="New well", command = lambda: self.new_well_entry())
-		#self.button_dict["New Well"].pack(side=tk.BOTTOM)
-		#self.pool =multiprocessing.Pool(processes=12)
+
+		# Make a list for the stimuli menus so that we can update it when we make new stimuli
+		self.stimuli_menu_dict = {}
 		self.framesForWells = tk.Frame(self.commandFrame)
 		self.framesForWells.pack(side=tk.TOP)
 		tk.Button(self.commandFrame, text="New well", command = lambda: self.new_well_entry()).pack(side=tk.BOTTOM)
+
+	def update_stimuli_menus(self):
+		if self.stimuli_menu_dict:
+			for (stim_menu, stim_string) in self.stimuli_menu_dict.iteritems():
+				m = stim_menu["menu"]
+        		m.delete(0, "end")
+        		for string in list(self.pi.retrieve_stim_dict().keys()):
+        			m.add_command(label=string, command= tk._setit(stim_string, string))
 
 # def read_stim(block_list, well_number):
 # 	# reads a list of blocks, and sends the protocols sequentially, each for the duration within its "duration" attribute
