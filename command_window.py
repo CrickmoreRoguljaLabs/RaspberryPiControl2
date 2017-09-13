@@ -332,6 +332,7 @@ class Command_Window(object):
 	def block_thread(self,well_num,stimulus):
 		try:
 			thr = threading.Thread(target=self.run_block, args=(well_num, stimulus))
+			thr.daemon = True
 			thr.start()
 		except:
 			# Eventually throw error
