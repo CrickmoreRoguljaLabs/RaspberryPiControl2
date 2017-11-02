@@ -48,20 +48,23 @@ ListOfAddresses=[ "10.32.64.132",
 	"10.32.64.135",
 	"10.32.64.180", 
 	"10.32.64.110",
-	"10.32.64.69"]
+	"10.32.64.69",
+	"10.32.64.134"]
 ListOfAliases=["Single Wells (1)", 
 	"Single Wells (2)",
 	"Water (red) (left)" ,
 	"Green / red water", 
 	"Green / red",
-	"Red / green / blue / water"]
+	"Red / green / blue / water",
+	"Many wells"]
 
 color_dict = {"Single Wells (1)":["Red"], 
 	"Single Wells (2)":["Red"],
 	"Water (red) (left)":["Red"],
 	"Green / red water":["Red","Green"], 
 	"Green / red":["Red","Green"],
-	"Red / green / blue / water":["Red","Green","Blue"]}
+	"Red / green / blue / water":["Red","Green","Blue"],
+	"Many wells":["Red"]}
 
 alias_address_map = dict(zip(ListOfAliases,ListOfAddresses))
 

@@ -32,7 +32,6 @@ class Raspberry_Pi(object):
 			ssh.connect(ID[0],username='pi',password='raspberry')
 			self.ssh = ssh
 			self.sftp_client = self.ssh.open_sftp()
-			self.stim_dict = self.retrieve_stim_dict()
 			#vid_shell = paramiko.SSHClient()
 			#vid_shell.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 			#vid_shell.connect(ID[0],username='pi',password='raspberry')
@@ -41,13 +40,13 @@ class Raspberry_Pi(object):
 		if (not use_ssh) or test_video:
 			self.demo_video_frame()
 	
-	def retrieve_stim_dict(self):
+	def retrieve_stim_dict(self,protocol):
  	# return a dict mapping file name to a collection of blocks
- 		list_of_stimuli_files = [file for file in self.sftp_client.listdir('./stimuli') if file.endswith('.pi')]
+ 		list_of_stimuli_files = [file for file in self.sftp_client.listdir('./stimuli/%s' %protocol) if file.endswith('.pi')]
  		stim_dict = {}
  		for file in list_of_stimuli_files:
  			#print './stimuli/%s'%file
-			remote_file = self.sftp_client.open('./stimuli/%s'%file,mode='r')
+			remote_file = self.sftp_client.open('./stimuli/%s/%s'%(protocol,file),mode='r')
 			try:
 	 			data = json.load(remote_file)
 		 		block_list = []
@@ -71,6 +70,7 @@ class Raspberry_Pi(object):
 			self.stdin, self.stdout, self.stderr = self.ssh.exec_command("python "+command_dict[protocol_listed])
 		self.window.prot_specs(protocol_listed,self)
 		self.window.open_timers()
+		self.stim_dict = self.retrieve_stim_dict(protocol_listed)
 
 	def update_intensity(self, new_intensity):
 		# Updates the green light intensity
@@ -98,6 +98,11 @@ class Raspberry_Pi(object):
 		if use_ssh:
 			self.stdin.write(command+'\n')
 			self.stdin.flush()
+
+	def lights_out(self):
+		if use_ssh:
+			pass
+			
 
 	def update_history(self,command):
 		# Updates the command history

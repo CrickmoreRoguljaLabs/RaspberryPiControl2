@@ -92,7 +92,7 @@ class StimConstructor(object):
 		# save the stimulus as a ".pi" file, which contains the JSON formatted stimulation blocks
 		self.window.destroy()
 		if self.pi is not None:
-			with self.pi.sftp_client.open("stimuli//%s.pi" %self.name_text.get(),mode='w') as stim_file:
+			with self.pi.sftp_client.open("stimuli//%s//%s.pi" %(self.protocol,self.name_text.get()),mode='w') as stim_file:
 				stimcoll = [block.attributes for block in self.blocks]
 				json.dump(stimcoll,stim_file)
 				print "on pi"

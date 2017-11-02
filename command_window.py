@@ -11,6 +11,7 @@ import stopwatch
 import StimConstructor
 import os
 import json
+import StimSelector
 #import multiprocessing
 import threading
 
@@ -136,7 +137,8 @@ class Command_Window(object):
 			self.commandFrame.pack(anchor=tk.NW)
 			self.new_stimulus = tk.Button(self.protFrame,text="New stimulus", command=lambda: self.new_stim(protocol_listed = self.protocols.get()))
 			self.new_stimulus.pack(side=tk.RIGHT)
-			self.stim_constructor_setup(self.protocols.get())
+			self.protocol = self.protocols.get()
+			self.stim_constructor_setup(self.protocol)
 		else:
 			## OLD PROTOCOL STYLE
 			if "Send command" in self.button_dict:
@@ -320,14 +322,20 @@ class Command_Window(object):
 		well_num_entry = tk.Entry(well_frame, width = 5)
 		well_num_entry.insert(0,"Well #")
 		well_num_entry.pack(side=tk.LEFT)
-		stimulus = tk.StringVar()
-		stimulus.set(list(self.pi.stim_dict.keys())[0])
-		stimlist = tk.OptionMenu(well_frame,stimulus, *list(self.pi.stim_dict.keys()))
-		self.stimuli_menu_dict[stimlist] = stimulus
+		stim_string = tk.StringVar()
+		stim_string.set("No stimulus")
+		stim_select_button = tk.Button(well_frame, text="Select stim", command= lambda: self.select_stim(self,self.pi,stim_string))
+		stim_select_button.pack(side=tk.LEFT)
+
+		stimlist = tk.OptionMenu(well_frame,stim_string, *list(self.pi.retrieve_stim_dict(self.protocol).keys()))
+		self.stimuli_menu_dict[stimlist] = stim_string
 		stimlist.config(width=15)
 		stimlist.pack(side=tk.LEFT)
-		send_command_button = tk.Button(well_frame,text="Send commands",command= lambda: self.block_thread(well_num_entry.get(), stimulus.get()))
-		send_command_button.pack(side=tk.LEFT)
+		send_command_button = tk.Button(well_frame,text="Send commands",command= lambda: self.block_thread(well_num_entry.get(), stim_string.get()))
+		send_command_button.pack(side=tk.RIGHT)
+
+	def select_stim(self,command_window,pi,stim_string):
+		StimSelector.StimSelector(command_window,pi,stim_string)
 
 	def block_thread(self,well_num,stimulus):
 		try:
@@ -340,7 +348,7 @@ class Command_Window(object):
 
 	def run_block(self,well_num, stimulus):
 		# Run the block in the input well well_num
-		block_list = self.pi.stim_dict[stimulus]
+		block_list = self.pi.retrieve_stim_dict(self.protocol)[stimulus]
 		for block in block_list:
 			# returns, in string form, the commands for that well
 			comm = block.return_commands()
@@ -350,6 +358,13 @@ class Command_Window(object):
 			time.sleep(60*float(block.duration))
 			if float(block.duration) == 0:
 				break
+		self.lights_out(well_num)
+		pass
+
+	def lights_out(self,well_num):
+		# Turn off the lights.
+		#everything_off = 
+		#self.pi.command_verbatim(",".join([well_num,everything_off]))
 		pass
 
 	def stim_constructor_setup(self, protocol_listed):
@@ -375,17 +390,8 @@ class Command_Window(object):
 			for (stim_menu, stim_string) in self.stimuli_menu_dict.iteritems():
 				m = stim_menu["menu"]
         		m.delete(0, "end")
-        		for string in list(self.pi.retrieve_stim_dict().keys()):
+        		for string in list(self.pi.retrieve_stim_dict(self.protocol).keys()):
         			m.add_command(label=string, command= tk._setit(stim_string, string))
-
-# def read_stim(block_list, well_number):
-# 	# reads a list of blocks, and sends the protocols sequentially, each for the duration within its "duration" attribute
-# 	for block in block_list:
-# 		light_command = block.return_commands()
-# 		command = "%s,%s" %str(well_number), light_command
-# 		self.pi.send_command(command)
-# 		# sleep for the duration
-# 		time.sleep(block.duration*60.0)
 
 	def remove_button(self,name_of_button):
 		self.button_dict[name_of_button].pack_forget()
