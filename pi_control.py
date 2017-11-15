@@ -33,8 +33,15 @@ def close_down():
 		pi.close_pi()
 	master.destroy()
 
+def add_address():
+	pass
+
 master = tk.Tk()
 master.title('Raspberry Pi Manager')
+menubar = tk.Menu(master,tearoff=0)
+menubar.add_command(label="New address", command=lambda: add_address())
+menubar.add_command(label="Quit", command=master.quit)
+master.config(menu=menubar)
 
 ListOfPis = []
 

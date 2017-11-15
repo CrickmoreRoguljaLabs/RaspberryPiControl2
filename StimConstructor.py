@@ -18,14 +18,18 @@ class StimConstructor(object):
 		self.blocks = []
 		initialFrame = tk.Frame(window)
 		initialFrame.pack(side=tk.TOP)
+
 		self.new_block_button = tk.Button(initialFrame,text="New block",command = lambda: self.new_block_window())
 		self.new_block_button.pack(side=tk.LEFT)
+
 		self.name_text = tk.StringVar()
 		self.name = tk.Entry(initialFrame,textvariable=self.name_text)
 		self.name.pack(side=tk.LEFT)
 		self.name_text.set("Stimulus name")
+
 		self.save_stimulus_button = tk.Button(initialFrame,text="Save stimulus",command = lambda: self.save_stimulus())
 		self.save_stimulus_button.pack(side=tk.LEFT)
+		
 		self.pi = pi
 
 	def new_block_window(self):

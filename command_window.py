@@ -134,11 +134,13 @@ class Command_Window(object):
 			self.well_frames = []
 			self.commandFrame.destroy()
 			self.commandFrame = tk.Frame(self.window)
-			self.commandFrame.pack(anchor=tk.NW)
+			self.commandFrame.pack(side=tk.LEFT, anchor=tk.NW)
+			callFrame = tk.Frame(self.commandFrame)
+			callFrame.pack(side=tk.LEFT,anchor=tk.NW)	
 			self.new_stimulus = tk.Button(self.protFrame,text="New stimulus", command=lambda: self.new_stim(protocol_listed = self.protocols.get()))
 			self.new_stimulus.pack(side=tk.RIGHT)
 			self.protocol = self.protocols.get()
-			self.stim_constructor_setup(self.protocol)
+			self.stim_constructor_setup(self.protocol,callFrame)
 		else:
 			## OLD PROTOCOL STYLE
 			if "Send command" in self.button_dict:
@@ -367,7 +369,7 @@ class Command_Window(object):
 		#self.pi.command_verbatim(",".join([well_num,everything_off]))
 		pass
 
-	def stim_constructor_setup(self, protocol_listed):
+	def stim_constructor_setup(self, protocol_listed,callFrame):
 	## Sets up the command window for using saved .pi files
 	# First clear out the old wells
 		try:
@@ -377,13 +379,14 @@ class Command_Window(object):
 			pass
 		#self.commandFrame.pack(anchor=tk.NW)
 		if "Green" in self.colors:
-				tk.Button(self.commandFrame,text="Update green intensity", command= lambda: self.update_intensity()).pack(side=tk.TOP)
+				tk.Button(self.protFrame,text="Update green intensity", command= lambda: self.update_intensity()).pack(side=tk.TOP)
 
 		# Make a list for the stimuli menus so that we can update it when we make new stimuli
 		self.stimuli_menu_dict = {}
-		self.framesForWells = tk.Frame(self.commandFrame)
+		tk.Label(callFrame, text="Send commands").pack(side=tk.TOP, anchor=tk.N)
+		self.framesForWells = tk.Frame(callFrame)
 		self.framesForWells.pack(side=tk.TOP)
-		tk.Button(self.commandFrame, text="New well", command = lambda: self.new_well_entry()).pack(side=tk.BOTTOM)
+		tk.Button(callFrame, text="New well", command = lambda: self.new_well_entry()).pack(side=tk.BOTTOM)
 
 	def update_stimuli_menus(self):
 		if self.stimuli_menu_dict:
