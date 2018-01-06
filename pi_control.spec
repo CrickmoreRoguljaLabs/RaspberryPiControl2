@@ -5,8 +5,8 @@ block_cipher = None
 
 a = Analysis(['pi_control.py'],
              pathex=['/Users/stephen/Desktop/Pi Control'],
-             binaries=None,
-             datas=None,
+             binaries=[],
+             datas=[],
              hiddenimports=['packaging', 'packaging', 'packaging.version', 'packaging.specifiers', 'packaging.requirements', 'six'],
              hookspath=[],
              runtime_hooks=[],
