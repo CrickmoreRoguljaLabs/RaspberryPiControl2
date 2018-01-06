@@ -38,7 +38,7 @@ class Raspberry_Pi(object):
 			#self.vid_shell = vid_shell
 			#self.build_video_frame(self.vid_shell)
 		if (not use_ssh) or test_video:
-			self.demo_video_frame()
+			self.window.make_video_frame()
 	
 	def retrieve_stim_dict(self,protocol):
  	# return a dict mapping file name to a collection of blocks
@@ -59,9 +59,9 @@ class Raspberry_Pi(object):
 		 		pass
 	 	return stim_dict
 
-	def demo_video_frame(self):
-		# for testing before ssh is implemented
-		self.window.make_video_frame()
+	def create_video_stream(self, receiver):
+		# create a stream targeted to "receiver"
+		pass
 
 	def run_prot(self,protocol_listed):
 		# runs the protocol listed by sending a command to the Pi, which commands the Arduino
@@ -102,7 +102,6 @@ class Raspberry_Pi(object):
 	def lights_out(self):
 		if use_ssh:
 			pass
-			
 
 	def update_history(self,command):
 		# Updates the command history

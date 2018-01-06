@@ -42,6 +42,7 @@ class Command_Window(object):
 		self.title = title
 
 	def make_video_frame(self):
+		self.panel = tk.Label(self.videoFrame)
 		self.start_vid_button = tk.Button(self.videoFrame,text="Start video",command = lambda: self.demo_start_video())
 		self.start_vid_button.pack()
 
@@ -49,21 +50,23 @@ class Command_Window(object):
 		# for testing before ssh is implemented 
 		self.start_vid_button.destroy()
 		#self.window.demo_play_video()
-		self.stream_process = multiprocessing.Process(target=self.demo_play_video()).start()
-		self.stream_process.start()
+		self.stream_thread = threading.Thread(target=self.demo_play_video)
+		self.stream_thread.start()
 		self.stop_vid_button = tk.Button(self.videoFrame,text="Stop video",command = lambda: self.stop_video())
 		self.stop_vid_button.pack(side=tk.BOTTOM)
 
 	def demo_play_video(self, port=8000):
 		self.streaming = True
-		image_path = "/Users/stephen/Desktop/Pi Control/cameraman.jpg"
-		img = ImageTk.PhotoImage(Image.open(image_path))
-		self.panel.image = img # keep a reference!
-		self.panel.pack()
 		while self.streaming:
+			image_path = "/Users/stephen/Desktop/Pi Control/cameraman.jpg"
+			img = ImageTk.PhotoImage(Image.open(image_path))
 			self.panel.image = img
-			self.panel.after(10,lambda: self.panel.config(image = img))
-		self.panel.pack()
+			self.panel.config(image = img)
+			self.panel.pack()
+		self.panel.destroy()
+		self.make_video_frame()
+		self.stop_vid_button.destroy()	
+
 
 #	def play_video(self,vid_shell,port=8000):
 #		stream=VideoStream(port=port,vid_shell=vid_shell)
@@ -85,10 +88,6 @@ class Command_Window(object):
 
 	def stop_video(self):
 		self.streaming = False
-		self.stream_process.terminate()
-		self.panel.destroy()
-		self.make_video_frame()
-		self.stop_vid_button.destroy()
 
 
 	def protocol_button(self,this_pi):
@@ -330,6 +329,7 @@ class Command_Window(object):
 		stim_select_button.pack(side=tk.LEFT)
 
 		stimlist = tk.OptionMenu(well_frame,stim_string, *list(self.pi.retrieve_stim_dict(self.protocol).keys()))
+		print (list(self.pi.retrieve_stim_dict(self.protocol).keys()))
 		self.stimuli_menu_dict[stimlist] = stim_string
 		stimlist.config(width=15)
 		stimlist.pack(side=tk.LEFT)
@@ -357,11 +357,10 @@ class Command_Window(object):
 			self.pi.command_verbatim(",".join([well_num,comm]))
 			print ",".join([well_num,comm])
 			print block.duration
-			time.sleep(60*float(block.duration))
+			time.sleep(60.0*float(block.duration))
 			if float(block.duration) == 0:
 				break
 		self.lights_out(well_num)
-		pass
 
 	def lights_out(self,well_num):
 		# Turn off the lights.
