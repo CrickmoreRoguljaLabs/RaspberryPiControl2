@@ -42,20 +42,30 @@ class Command_Window(object):
 		self.title = title
 
 	def make_video_frame(self):
+		# Establishes the frame for manipulating the videos
+		self.video_name = tk.Entry(self.videoFrame, justify="center", width=15)
+		self.video_name.insert(0,"Name of video")
+		self.video_name.pack()
 		self.panel = tk.Label(self.videoFrame)
-		self.start_vid_button = tk.Button(self.videoFrame,text="Start video",command = lambda: self.demo_start_video())
+		self.start_vid_button = tk.Button(self.videoFrame,text="Start video",command = lambda: self.start_video())
 		self.start_vid_button.pack()
 
-	def demo_start_video(self):
-		# for testing before ssh is implemented 
+	def start_video(self):
+		# start a video plus make a log of commands issued since the video was started
 		self.start_vid_button.destroy()
-		#self.window.demo_play_video()
-		self.stream_thread = threading.Thread(target=self.demo_play_video)
+		name_of_video = self.video_name.get()
+		self.video_title = tk.Label(self.videoFrame,text=name_of_video)
+		self.video_title.pack()
+		self.stream_thread = threading.Thread(target=self.play_video)
 		self.stream_thread.start()
 		self.stop_vid_button = tk.Button(self.videoFrame,text="Stop video",command = lambda: self.stop_video())
+		self.video_name.destroy()
+		# all the logging stuff happens on the pi itself.
+		self.pi.open_video_log(name_of_video=name_of_video)
+
 		self.stop_vid_button.pack(side=tk.BOTTOM)
 
-	def demo_play_video(self, port=8000):
+	def play_video(self, port=8000):
 		self.streaming = True
 		while self.streaming:
 			image_path = "/Users/stephen/Desktop/Pi Control/cameraman.jpg"
@@ -63,6 +73,7 @@ class Command_Window(object):
 			self.panel.image = img
 			self.panel.config(image = img)
 			self.panel.pack()
+		self.video_title.destroy()
 		self.panel.destroy()
 		self.make_video_frame()
 		self.stop_vid_button.destroy()	
@@ -193,22 +204,22 @@ class Command_Window(object):
 				# To revert, replace "frame" with "commandFrame"
 				self.command_labels.append(tk.Label(frame,text='Wait (min)'))
 				self.command_labels[-1].pack(anchor=tk.NW)
-				self.command_entries.append(tk.Entry(frame))
+				self.command_entries.append(tk.Entry(frame, width=10))
 				self.command_entries[-1].pack(anchor=tk.NW)
 
 				self.command_labels.append(tk.Label(frame,text='First pulse (ms)'))
 				self.command_labels[-1].pack(anchor=tk.NW)
-				self.command_entries.append(tk.Entry(frame))
+				self.command_entries.append(tk.Entry(frame, width=10))
 				self.command_entries[-1].pack(anchor=tk.NW)
 				
 				self.command_labels.append(tk.Label(frame,text='Rest duration (s)'))
 				self.command_labels[-1].pack(anchor=tk.NW)
-				self.command_entries.append(tk.Entry(frame))
+				self.command_entries.append(tk.Entry(frame, width=10))
 				self.command_entries[-1].pack(anchor=tk.NW)
 
 				self.command_labels.append(tk.Label(frame,text='Second pulse (ms)'))
 				self.command_labels[-1].pack(anchor=tk.NW)
-				self.command_entries.append(tk.Entry(frame))
+				self.command_entries.append(tk.Entry(frame, width=10))
 				self.command_entries[-1].pack(anchor=tk.NW)
 
 		if protocol_listed == "Flashing Lights":
@@ -225,12 +236,12 @@ class Command_Window(object):
 
 				self.command_labels.append(tk.Label(frame,text='Frequency (Hz)'))
 				self.command_labels[-1].pack(anchor=tk.NW)
-				self.command_entries.append(tk.Entry(frame))
+				self.command_entries.append(tk.Entry(frame, width=10))
 				self.command_entries[-1].pack(anchor=tk.NW)
 
 				self.command_labels.append(tk.Label(frame,text='Pulse duration (ms)'))
 				self.command_labels[-1].pack(anchor=tk.NW)
-				self.command_entries.append(tk.Entry(frame))
+				self.command_entries.append(tk.Entry(frame, width=10))
 				self.command_entries[-1].pack(anchor=tk.NW)
 		if protocol_listed == "Blocks":
 			self.command_labels.append(tk.Label(commandFrame,text='Well Number'))
@@ -246,22 +257,22 @@ class Command_Window(object):
 
 				self.command_labels.append(tk.Label(frame,text='Frequency (Hz)'))
 				self.command_labels[-1].pack(anchor=tk.NW)
-				self.command_entries.append(tk.Entry(frame))
+				self.command_entries.append(tk.Entry(frame, width=10))
 				self.command_entries[-1].pack(anchor=tk.NW)
 
 				self.command_labels.append(tk.Label(frame,text='Pulse duration (ms)'))
 				self.command_labels[-1].pack(anchor=tk.NW)
-				self.command_entries.append(tk.Entry(frame))
+				self.command_entries.append(tk.Entry(frame, width=10))
 				self.command_entries[-1].pack(anchor=tk.NW)
 
 				self.command_labels.append(tk.Label(frame,text='Duration of block (ms)'))
 				self.command_labels[-1].pack(anchor=tk.NW)
-				self.command_entries.append(tk.Entry(frame))
+				self.command_entries.append(tk.Entry(frame, width=10))
 				self.command_entries[-1].pack(anchor=tk.NW)
 
 				self.command_labels.append(tk.Label(frame,text='Time between start\nof each block (ms)'))
 				self.command_labels[-1].pack(anchor=tk.NW)
-				self.command_entries.append(tk.Entry(frame))
+				self.command_entries.append(tk.Entry(frame, width=10))
 				self.command_entries[-1].pack(anchor=tk.NW)
 		for entry in self.command_entries:
 			entry.insert(0,"0")
@@ -280,6 +291,7 @@ class Command_Window(object):
 		update.pack()
 
 	def open_timers(self):
+		# Set up the timers anew when you start a protocol
 		self.timerFrame.destroy()
 		self.timerFrame = tk.Frame(self.commandFrame)
 		self.timerFrame.pack(side=tk.LEFT,anchor=tk.NW,padx=40)
@@ -291,6 +303,7 @@ class Command_Window(object):
 		self.make_new_timer()
 
 	def make_new_timer(self):
+		# Creates a new individual timer in the timer frame
 		new_timer = tk.Frame(self.indTimersFrame)
 		new_timer.pack(side=tk.TOP,anchor=tk.N)
 		timer = tk.Entry(new_timer,width=5)
@@ -304,12 +317,6 @@ class Command_Window(object):
 		stop_button.pack(side=tk.LEFT)
 		reset_button = tk.Button(new_timer,text="Reset",command=sw.Reset)
 		reset_button.pack(side=tk.LEFT)
-		destroy_button = tk.Button(new_timer,text="Destroy",command= lambda: self.destroy_timer(timer,sw,start_button,stop_button,reset_button,destroy_button))
-		destroy_button.pack(side=tk.LEFT)
-
-	def destroy_timer(self, *args):
-		for arg in args:
-			arg.destroy()
 
 	def new_stim(self, protocol_listed):
 	# Set up a condition for making a new stimulation protocol

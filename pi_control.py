@@ -21,7 +21,7 @@ def pi_connect(address,ID):
 		ListOfPis.append(this_pi)
 	except:
 		print sys.exc_info()
-		#connection_error()
+		connection_error()
 
 def connection_error():
 	error_window = tk.Toplevel(master)
@@ -30,7 +30,8 @@ def connection_error():
 
 def close_down():
 	for pi in ListOfPis:
-		pi.close_pi()
+		if pi.on:
+			pi.close_pi()
 	master.destroy()
 
 def add_address():
