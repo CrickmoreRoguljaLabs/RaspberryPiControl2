@@ -23,11 +23,12 @@ class Raspberry_Pi(object):
 	
 	def __init__(self,ID,master,colors=["Red"]):
 		self.IP_ADDRESS = ID[0]
+		self.master = master
 		ListOfProtocols = ["Paired pulse", "Flashing Lights", "Blocks"]
 		self.window = Command_Window(tk.Toplevel(master),ListOfProtocols,pi=self,colors=colors)
 		self.window.set_title(ID[1])
 		self.on = True
-
+		self.connected = False
 		self.window.protocol_button(self)
 		self.window.quit_button(lambda: self.close_pi())
 
@@ -46,10 +47,9 @@ class Raspberry_Pi(object):
 	
 	def retrieve_stim_dict(self,protocol):
  	# return a dict mapping file name to a collection of blocks
- 		list_of_stimuli_files = [file for file in self.sftp_client.listdir('./stimuli/%s' %protocol) if file.endswith('.pi')]
- 		stim_dict = {}
- 		for file in list_of_stimuli_files:
- 			#print './stimuli/%s'%file
+		list_of_stimuli_files = [file for file in self.sftp_client.listdir('./stimuli/%s' %protocol) if file.endswith('.pi')]
+		stim_dict = {}
+		for file in list_of_stimuli_files:
 			remote_file = self.sftp_client.open('./stimuli/%s/%s'%(protocol,file),mode='r')
 			try:
 	 			data = json.load(remote_file)
@@ -58,10 +58,10 @@ class Raspberry_Pi(object):
 		 			block_list.append(StimConstructor.load_block(block_attributes))
 		 		remote_file.close()
 		 		stim_dict[file] = block_list
-		 	except:
+			except:
 		 		# Live dangerously
 		 		pass
-	 	return stim_dict
+		return stim_dict
 
 	def create_video_stream(self, receiver):
 		# create a stream targeted to "receiver"
@@ -72,18 +72,36 @@ class Raspberry_Pi(object):
 		#self.client_socket.close()
 		self.stdin, self.stdout, self.stderr = self.ssh.exec_command("python connect.py")
 		time.sleep(0.5)
-		self.client_socket.connect((self.IP_ADDRESS,8400))
+		try:
+			self.client_socket.connect((self.IP_ADDRESS,8400))
+		except Exception as e:
+			error_window = tk.Toplevel(self.master)
+			tk.Label(error_window,text="This Raspberry Pi is already being used!\nIf you're sure it's free, restart the Pi\nError: %s" %e).pack()
+			tk.Button(error_window,text="OK",command=error_window.destroy).pack()
+			self.close_pi()
 		time.sleep(0.5)
 		# set up the protocol
-		self.prot_client_socket = socket.socket()
-		self.prot_client_socket.connect((self.IP_ADDRESS,8600))
-		self.prot_client_socket.sendall(protocol_listed)
-		self.prot_client_socket.close()
+		try:
+			self.prot_client_socket = socket.socket()
+			self.prot_client_socket.connect((self.IP_ADDRESS,8600))
+			self.prot_client_socket.sendall(protocol_listed)
+			self.prot_client_socket.close()
+		except Exception as e:
+			error_window = tk.Toplevel(self.master)
+			tk.Label(error_window,text="This Raspberry Pi is already being used!\nIf you're sure it's free, restart the Pi\nError: %s" %e).pack()
+			tk.Button(error_window,text="OK",command=error_window.destroy).pack()
+			self.close_pi()
 		time.sleep(0.5)
 		# set up the arduino protocol
 		#self.ard_client_socket.close()
-		self.ard_client_socket.connect((self.IP_ADDRESS,8900))
-		self.connected = True
+		try:
+			self.ard_client_socket.connect((self.IP_ADDRESS,8900))
+			self.connected = True
+		except Exception as e:
+			error_window = tk.Toplevel(self.master)
+			tk.Label(error_window,text="Arduino is busy\nIf you're sure it's free, restart the Pi\nError: %s" %e).pack()
+			tk.Button(error_window,text="OK",command=error_window.destroy).pack()
+			self.close_pi()
 		self.window.prot_specs(protocol_listed,self)
 		self.window.open_timers()
 		self.stim_dict = self.retrieve_stim_dict(protocol_listed)
@@ -94,7 +112,7 @@ class Raspberry_Pi(object):
 		# Updates the green light intensity
 		if use_ssh:
 			self.ard_client_socket.sendall("i,%s\n" %new_intensity)
-			print "i,%s" %new_intensity
+			print ("i,%s" %new_intensity)
 
 	def send_command(self, command_entries = []):
 		# For when stimulus constructor is not supported
@@ -126,6 +144,12 @@ class Raspberry_Pi(object):
 	def open_video_log(self,name_of_video):
 		self.logging_video = True
 		self.name_of_video = name_of_video
+		ssh_log = paramiko.SSHClient()
+		ssh_log.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+		ssh_log.connect(self.IP_ADDRESS,username='pi',password='raspberry')
+		self.ssh_log = ssh_log
+		self.stdin_log, self.stdout_log, self.stderr_log = self.ssh_log.exec_command("python logExperiment.py %s" %name_of_video)
+		self.ssh_log.close()
 
 	def write_command_to_log(self,command):
 		pass

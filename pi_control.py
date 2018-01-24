@@ -19,13 +19,12 @@ def pi_connect(address,ID):
 		ID = [address,ID]
 		this_pi = Raspberry_Pi(ID,master,colors=color_dict[ID[1]])
 		ListOfPis.append(this_pi)
-	except:
-		print sys.exc_info()
-		connection_error()
+	except Exception as e:
+		connection_error(e)
 
-def connection_error():
+def connection_error(e):
 	error_window = tk.Toplevel(master)
-	tk.Label(error_window,text="Error connecting to raspberry pis.\nMake sure you're on TCH network").pack()
+	tk.Label(error_window,text="Error connecting to raspberry pis.\nMake sure you're on TCH network\n Error: %s" %e).pack()
 	tk.Button(error_window,text="OK",command=error_window.destroy).pack()
 
 def close_down():
@@ -81,7 +80,7 @@ add.set(ListOfAliases[0]) # default value
 
 w = tk.OptionMenu(master, add, *ListOfAliases)
 w.grid(row=0, column=1)
-print alias_address_map[add.get()],add.get()
+print(alias_address_map[add.get()],add.get())
 conn_button = tk.Button(master, text='Connect', command=lambda: pi_connect(alias_address_map[add.get()],add.get()))
 conn_button.grid(row=0, column=2)
 tk.Button(master, text='Quit', command=lambda: close_down()).grid(row=7, column=0, pady=4)

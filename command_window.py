@@ -5,7 +5,7 @@ if sys.version_info[0] < 3:
     import Tkinter as tk
 else:
 	import tkinter as tk
-from PIL import ImageTk, Image
+#from PIL import ImageTk, Image
 import time
 import stopwatch
 import StimConstructor
@@ -362,8 +362,8 @@ class Command_Window(object):
 			# returns, in string form, the commands for that well
 			comm = block.return_commands()
 			self.pi.command_verbatim(",".join([well_num,comm]))
-			print ",".join([well_num,comm])
-			print block.duration
+			print(",".join([well_num,comm]))
+			print(block.duration)
 			time.sleep(60.0*float(block.duration))
 			if float(block.duration) == 0:
 				break
@@ -398,9 +398,9 @@ class Command_Window(object):
 		if self.stimuli_menu_dict:
 			for (stim_menu, stim_string) in self.stimuli_menu_dict.iteritems():
 				m = stim_menu["menu"]
-        		m.delete(0, "end")
-        		for string in list(self.pi.retrieve_stim_dict(self.protocol).keys()):
-        			m.add_command(label=string, command= tk._setit(stim_string, string))
+				m.delete(0,"end")
+				for string in list(self.pi.retrieve_stim_dict(self.protocol).keys()):
+					m.add_command(label=string, command= tk._setit(stim_string, string))
 
 	def remove_button(self,name_of_button):
 		self.button_dict[name_of_button].pack_forget()
